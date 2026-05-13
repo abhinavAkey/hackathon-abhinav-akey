@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(chmod +x *)",
+      "Bash(python3 -c ' *)",
+      "Bash(echo \"TSC exit code: $?\")",
+      "Bash(echo \"TSC exit: $?\")",
+      "Read(//usr/local/bin/**)",
+      "Bash(brew list *)",
+      "Bash(cp manifest.json dist/)",
+      "Bash(cp -r public/icons dist/)",
+      "Bash(pip3 show *)",
+      "Bash(pip show *)",
+      "Bash(pip3 search *)",
+      "Bash(pip3 install *)",
+      "Bash(pip3 list *)",
+      "Bash(python3 *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
