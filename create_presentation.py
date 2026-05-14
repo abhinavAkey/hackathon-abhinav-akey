@@ -167,7 +167,7 @@ slide_header(s, 'The Problem We Are Solving',
 # 4 pain-point cards
 cards = [
     {'title': 'Troubleshooting Errors', 'time': '30\u201360 min/incident',
-     'pain': 'Terraform GCP 403 errors lead to 30+ minutes of searching Confluence, Slack, and asking teammates',
+     'pain': 'Terraform GCP 403 errors lead to 30+ minutes of searching Confluence, Teams, and asking teammates',
      'impact': 'Blocked pipelines, idle developers, delayed deployments',
      'color': RED},
     {'title': 'PR Code Review', 'time': '20\u201340 min/PR',
@@ -241,7 +241,7 @@ tabs = [
     {'tab': 'Review', 'title': 'Automated PR\nCode Review',
      'items': [
          'One-click "Analyze Current PR" detects ADO/GitHub PR pages automatically',
-         'AI reviews against Zions security standards (CKV policies, CMEK, IAM, network)',
+         'AI reviews against Zions security standards (IAM, network, encryption, secrets)',
          'Structured output: quality score, issues by severity, specific fix recommendations',
          'Copy full review to clipboard for pasting directly into PR comments',
      ], 'color': VIOLET},
@@ -334,7 +334,7 @@ be_items = [
     ('Python FastAPI', 'Async REST API with auto-generated Swagger docs'),
     ('LangChain', 'Document loading, chunking, retrieval chains'),
     ('ChromaDB', 'Embedded vector store for semantic search'),
-    ('OpenAI GPT-4o-mini', 'Cost-effective LLM for chat and code review'),
+    ('Google Gemini 3', 'Cost-effective LLM for chat and code review'),
     ('text-embedding-3-small', 'Efficient embeddings for document vectors'),
     ('Confluence Connector', 'Ready for live API integration (REST)'),
     ('5 Knowledge Base Docs', 'GCP IAM, Terraform, ADO, ServiceNow, Security'),
@@ -372,7 +372,7 @@ slide_header(s, 'Live Demo: A Developer\'s Workflow',
 
 steps = [
     {'n': '1', 'title': 'The Error\nStrikes', 'desc':
-     'Terraform deploy fails with GCP 403 Forbidden.\n\nNormally: 30+ minutes hunting through Confluence and Slack.',
+     'Terraform deploy fails with GCP 403 Forbidden.\n\nNormally: 30+ minutes hunting through Confluence and Teams.',
      'color': RED, 'tab': 'Before DevKick'},
     {'n': '2', 'title': 'Ask DevKick\nChat', 'desc':
      'Open side panel \u2192 Chat tab. Ask the chatbot.\n\nRAG retrieves the exact IAM role and resolution steps.',
@@ -481,7 +481,7 @@ txt(s, Inches(0.7), Inches(4.2), Inches(5), Inches(0.3),
 
 strat = [
     ('Risk Reduction & Compliance',
-     'Automated PR reviews enforce Zions security standards (CKV policies, CMEK encryption, IAM least privilege, network rules). '
+     'Automated PR reviews enforce Zions security standards (IAM least privilege, encryption at rest, network rules, secrets management). '
      'Security issues caught at code review stage, not in production audit.'),
     ('Knowledge Retention & Onboarding',
      'RAG pipeline captures institutional knowledge in a searchable vector store. New developers get instant answers '
@@ -524,7 +524,7 @@ innovations = [
      'color': VIOLET},
     {'title': 'AI Security Code Review Against Zions Standards',
      'desc': 'One-click PR analysis checks Terraform code against Zions-specific security policies: '
-             'CKV_GCP_24 (encryption), CKV_GCP_38 (no public IPs), CKV_GCP_2 (firewalls), CKV_GCP_11 (VPC flow logs). '
+             'encryption at rest, no public IPs, firewall rules, VPC flow logs, hardcoded secrets detection. '
              'Returns structured results with severity, fixes, and an overall quality score.',
      'wow': 'Copy-paste the AI review directly into ADO PR comments',
      'color': GREEN},
@@ -553,7 +553,7 @@ for i, inn in enumerate(innovations):
 
 # Tech stack bar
 rect(s, Inches(0.5), Inches(7.0), Inches(12.3), Inches(0.35), ZIONS_NAVY, 0.04)
-techs = 'React 18  |  TypeScript  |  Tailwind CSS  |  Vite 6  |  FastAPI  |  LangChain  |  ChromaDB  |  OpenAI GPT-4o-mini'
+techs = 'React 18  |  TypeScript  |  Tailwind CSS  |  Vite 6  |  FastAPI  |  LangChain  |  ChromaDB  |  Google Gemini 3'
 txt(s, Inches(0.5), Inches(7.0), Inches(12.3), Inches(0.35),
     techs, sz=11, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
 
@@ -603,7 +603,7 @@ ready_items = [
     ('ADO PR Diff Parsing', 'Hardcoded demo snippet \u2014 swap for ADO/GitHub API to fetch real diffs'),
     ('Repo Bootstrap', 'Simulated creation \u2014 ready to connect to ADO REST API for real repo scaffolding'),
     ('Notification System', 'Static reminders \u2014 designed for ADO work item and calendar API integration'),
-    ('Multi-Model Support', 'Works with OpenAI, Gemini (drop-in), or any OpenAI-compatible API'),
+    ('Multi-Model Support', 'Works with Gemini, OpenAI (drop-in), or any compatible API'),
     ('Environment Config', '.env-based config for API keys, base URLs, model selection \u2014 enterprise ready'),
     ('CORS & Security', 'FastAPI CORS middleware configured \u2014 ready for domain-specific restrictions'),
     ('API Documentation', 'Auto-generated Swagger/OpenAPI docs at /docs endpoint'),
@@ -696,10 +696,10 @@ phases = [
     ], 'color': ZIONS_BLUE},
     {'phase': 'Phase 3: Future', 'status': 'PLANNED', 'items': [
         'ADO pipeline status dashboard',
-        'Slack/Teams notifications',
+        'Teams notifications',
         'Custom knowledge bases per team',
         'Multi-tenant support',
-        'On-prem LLM option (Ollama)',
+        'Google Enterprise AI integration',
         'Enterprise rollout (200+ devs)',
     ], 'color': VIOLET},
 ]

@@ -111,8 +111,8 @@ A **Chrome/Edge Side Panel extension** that brings everything into one place —
       │
       ▼
 ┌──────────────┐
-│  OpenAI API  │  (or Google Gemini)
-│  GPT-4o-mini │
+│  Google Gemini  │
+│  Gemini 2.5 Flash │
 └──────────────┘
 ```
 
@@ -125,9 +125,9 @@ A **Chrome/Edge Side Panel extension** that brings everything into one place —
 | **Build** | Vite 6 | Fast builds, HMR for development |
 | **Icons** | Lucide React | Clean, consistent icon set |
 | **Backend** | Python FastAPI | Async, fast, auto-documented API |
-| **AI/LLM** | OpenAI GPT-4o-mini | Fast, cost-effective inference |
+| **AI/LLM** | Google Gemini 2.5 Flash | Fast, cost-effective inference |
 | **RAG** | LangChain + ChromaDB | Document chunking + vector search |
-| **Embeddings** | text-embedding-3-small | Efficient semantic embeddings |
+| **Embeddings** | text-embedding-004 | Efficient semantic embeddings |
 
 ---
 
@@ -142,7 +142,7 @@ A **Chrome/Edge Side Panel extension** that brings everything into one place —
 | **npm** | (comes with Node) | `npm --version` | Included with Node.js |
 | **pip** | (comes with Python) | `pip --version` | Included with Python |
 | **Edge or Chrome** | Latest | Already installed | Edge is pre-installed on Windows |
-| **OpenAI API Key** | — | — | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| **Google Gemini API Key** | — | — | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 
 > **Note:** On corporate Windows machines, if `python` is not found, try `python3` or `py` instead. If you can't install Node/Python, check if they're available via your company's software center.
 
@@ -229,10 +229,10 @@ pip install -r requirements.txt
 # Create your .env file
 copy .env.example .env
 
-# NOW EDIT .env — add your OpenAI API key:
+# NOW EDIT .env — add your Google Gemini API key:
 # Open in notepad:
 notepad .env
-# Change the line: OPENAI_API_KEY=sk-your-openai-api-key-here
+# Change the line: GOOGLE_API_KEY=your-google-api-key-here
 # Save and close notepad
 
 # Start the server
@@ -293,17 +293,17 @@ INFO:     Started reloader process
 
 ---
 
-### Step 5: (Optional) Use Google Gemini Instead of OpenAI
+### Step 5: Verify Google Gemini Configuration
 
-If your hackathon provides a Gemini API key instead of OpenAI, edit your `.env`:
+The backend is configured to use Google Gemini by default. Verify your `.env` has:
 
 ```env
-OPENAI_API_KEY=your-gemini-api-key
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-MODEL_NAME=gemini-2.0-flash
+GOOGLE_API_KEY=your-google-api-key
+GOOGLE_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+MODEL_NAME=gemini-2.5-flash
 ```
 
-The backend uses the OpenAI-compatible endpoint, so Gemini works as a drop-in replacement.
+The backend uses Google's OpenAI-compatible endpoint for seamless integration.
 
 ---
 
@@ -522,4 +522,4 @@ Hackathon-Zions/
 
 Internal Hackathon Project — Zions Bancorporation
 
-Built with React, Tailwind CSS, FastAPI, LangChain, ChromaDB, and OpenAI.
+Built with React, Tailwind CSS, FastAPI, LangChain, ChromaDB, and Google Gemini.

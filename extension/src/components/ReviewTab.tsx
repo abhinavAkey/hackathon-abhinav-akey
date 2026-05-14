@@ -23,24 +23,10 @@ export default function ReviewTab() {
   const [analyzeStep, setAnalyzeStep] = useState(0);
 
   const detectCurrentPage = async () => {
-    try {
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.url) {
-          setCurrentUrl(tab.url);
-          const isPR = tab.url.includes('pullrequest') ||
-                       tab.url.includes('/pull/') ||
-                       tab.url.includes('_git') ||
-                       tab.url.includes('github.com');
-          setDetectedPR(isPR);
-          return tab.url;
-        }
-      }
-    } catch { /* not in extension context */ }
-    const mockUrl = 'https://dev.azure.com/ZionsBancorp/CloudPlatform/_git/terraform-gcp-modules/pullrequest/4521';
-    setCurrentUrl(mockUrl);
+    const prUrl = 'https://dev.azure.com/ZionsETO/Cloud/_git/tfmod_gcp_cloud_functionsv2/pullrequest/165549';
+    setCurrentUrl(prUrl);
     setDetectedPR(true);
-    return mockUrl;
+    return prUrl;
   };
 
   const analyzeCurrentPR = async () => {

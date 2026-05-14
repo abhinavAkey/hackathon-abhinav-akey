@@ -2,6 +2,7 @@
 Zions DevKick — FastAPI Backend
 RAG-powered chatbot with ChromaDB vector store, PR reviewer, and Confluence connector.
 """
+print("=== LOADING MAIN.PY — CLOUD FUNCTIONS V2 VERSION ===")
 
 import os
 import glob
@@ -42,10 +43,10 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+GOOGLE_BASE_URL = os.getenv("GOOGLE_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.5-flash")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-004")
 
 KNOWLEDGE_BASE_DIR = Path(__file__).parent / "knowledge_base"
 CHROMA_PERSIST_DIR = Path(__file__).parent / "chroma_db"
@@ -181,8 +182,8 @@ def initialize_rag():
     """Initialize the RAG pipeline with ChromaDB vector store."""
     global vectorstore, qa_chain
 
-    if not OPENAI_API_KEY:
-        print("[RAG] WARNING: No OPENAI_API_KEY set. Using mock responses.")
+    if not GOOGLE_API_KEY:
+        print("[RAG] WARNING: No GOOGLE_API_KEY set. Using mock responses.")
         return
 
     # Load documents
@@ -201,9 +202,9 @@ def initialize_rag():
     print(f"[RAG] Split into {len(chunks)} chunks")
 
     # Create embeddings and vector store
-    embedding_kwargs = {"api_key": OPENAI_API_KEY}
-    if OPENAI_BASE_URL:
-        embedding_kwargs["base_url"] = OPENAI_BASE_URL
+    embedding_kwargs = {"api_key": GOOGLE_API_KEY}
+    if GOOGLE_BASE_URL:
+        embedding_kwargs["base_url"] = GOOGLE_BASE_URL
 
     embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL, **embedding_kwargs)
 
@@ -216,9 +217,9 @@ def initialize_rag():
     print(f"[RAG] ChromaDB vector store created with {len(chunks)} vectors")
 
     # Create LLM
-    llm_kwargs = {"api_key": OPENAI_API_KEY, "model": MODEL_NAME, "temperature": 0.3}
-    if OPENAI_BASE_URL:
-        llm_kwargs["base_url"] = OPENAI_BASE_URL
+    llm_kwargs = {"api_key": GOOGLE_API_KEY, "model": MODEL_NAME, "temperature": 0.3}
+    if GOOGLE_BASE_URL:
+        llm_kwargs["base_url"] = GOOGLE_BASE_URL
 
     llm = ChatOpenAI(**llm_kwargs)
 
@@ -710,66 +711,74 @@ class DocumentUploadRequest(BaseModel):
 # Hardcoded PR snippet for demo (The "Mock" part)
 # ---------------------------------------------------------------------------
 DEMO_TERRAFORM_SNIPPET = '''
-# main.tf — PR #4521: Add new GCP compute instance for analytics
-resource "google_compute_instance" "analytics_vm" {
-  name         = "analytics-vm-01"
-  machine_type = "e2-standard-4"
-  zone         = "us-central1-a"
-  project      = "zions-prod-01"
+# main.tf — PR #165549: GCP Cloud Functions v2 module update
+resource "google_cloudfunctions2_function" "etl_processor" {
+  name        = "etl-data-processor"
+  location    = "us-central1"
+  project     = "zions-prod-data-01"
+  description = "ETL pipeline processor for analytics ingestion"
 
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
+  build_config {
+    runtime     = "python311"
+    entry_point = "process_event"
+
+    source {
+      storage_source {
+        bucket = "zions-cf-source-prod"
+        object = "etl-processor-v2.zip"
+      }
     }
   }
 
-  network_interface {
-    network = "default"
-    access_config {
-      // Ephemeral public IP — SECURITY CONCERN
+  service_config {
+    max_instance_count    = 100
+    min_instance_count    = 0
+    available_memory      = "512Mi"
+    timeout_seconds       = 540
+    ingress_settings      = "ALLOW_ALL"  # Allows public internet traffic!
+    all_traffic_on_latest_revision = true
+
+    environment_variables = {
+      DB_HOST     = "10.0.1.5"
+      DB_NAME     = "analytics_prod"
+      DB_PASSWORD = "Pr0d@nalyt1cs2026!"  # Hardcoded secret!
+      API_KEY     = "AIzaSyB3x8K7mN2pQ4rT5vW6xY9zA1bC3dE5fG"  # Hardcoded API key!
     }
+
+    service_account_email = "sa-iac-creator-01@zions-prod-data-01.iam.gserviceaccount.com"
   }
 
-  metadata = {
-    ssh-keys = "admin:ssh-rsa AAAAB3NzaC1yc2EAAAA..."
-  }
-
-  service_account {
-    email  = "sa-iac-creator-01@zions-prod-01.iam.gserviceaccount.com"
-    scopes = ["cloud-platform"]  # Overly broad scope
-  }
-
-  labels = {
-    environment = "production"
-    team        = "analytics"
-  }
+  # Missing: VPC connector for private networking
+  # Missing: CMEK encryption configuration
 }
 
-resource "google_compute_firewall" "allow_ssh" {
-  name    = "allow-ssh-analytics"
-  network = "default"
-  project = "zions-prod-01"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["22", "80", "443", "8080", "3306"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]  # Allows SSH from anywhere!
-
-  target_tags = ["analytics"]
+resource "google_cloudfunctions2_function_iam_member" "public_invoker" {
+  project        = "zions-prod-data-01"
+  location       = "us-central1"
+  cloud_function = google_cloudfunctions2_function.etl_processor.name
+  role           = "roles/cloudfunctions.invoker"
+  member         = "allUsers"  # Anyone on the internet can invoke this function!
 }
 
-resource "google_storage_bucket" "data_bucket" {
-  name     = "zions-analytics-raw-data"
+resource "google_storage_bucket" "function_source" {
+  name     = "zions-cf-source-prod"
   location = "US"
-  project  = "zions-prod-01"
+  project  = "zions-prod-data-01"
 
-  # Missing: encryption, versioning, access logging
+  # Missing: CMEK encryption
+  # Missing: versioning
+  # Missing: access logging
+  # Missing: uniform bucket-level access
 }
 
-variable "db_password" {
-  default = "Z10ns@nalyt1cs2024!"  # Hardcoded secret!
+resource "google_project_iam_member" "function_sa_role" {
+  project = "zions-prod-data-01"
+  role    = "roles/editor"  # Overly broad — violates least privilege
+  member  = "serviceAccount:sa-iac-creator-01@zions-prod-data-01.iam.gserviceaccount.com"
+}
+
+variable "db_connection_string" {
+  default = "postgresql://admin:Pr0d@nalyt1cs2026!@10.0.1.5:5432/analytics_prod"  # Hardcoded credentials!
 }
 '''
 
@@ -837,51 +846,40 @@ async def chat(request: ChatRequest):
 @app.post("/api/review", response_model=ReviewResponse)
 async def review_pr(request: ReviewRequest):
     """PR code review endpoint. Uses hardcoded snippet + real LLM analysis."""
+    import time
     code = request.code_snippet or DEMO_TERRAFORM_SNIPPET
+    cache_bust = str(int(time.time()))
 
-    review_prompt = f"""You are a senior cloud security engineer at Zions Bancorporation reviewing a Terraform pull request.
+    review_prompt = f"""[Request ID: {cache_bust}] You are a senior cloud security engineer at Zions Bancorporation reviewing a Terraform pull request for a GCP Cloud Functions v2 module (PR #165549 in tfmod_gcp_cloud_functionsv2 repo).
 
-Analyze this code against Zions' security standards:
+Analyze this EXACT code against Zions' security standards. Only reference resources that actually appear in the code below. This code is about Cloud Functions v2 (google_cloudfunctions2_function), NOT compute instances:
 
-1. **No public IPs** on compute instances (use Cloud NAT)
-2. **No overly permissive firewall rules** (no 0.0.0.0/0)
+1. **No public invocation** of Cloud Functions (no allUsers IAM bindings)
+2. **No hardcoded secrets** in environment variables or Terraform variables
 3. **Encryption at rest** for all storage (CMEK required)
-4. **No hardcoded secrets** in code
-5. **Least privilege** IAM roles and OAuth scopes
-6. **VPC Flow Logs** enabled
+4. **Least privilege** IAM roles (no roles/editor or roles/owner)
+5. **Ingress restrictions** on Cloud Functions (no ALLOW_ALL)
+6. **VPC connector** required for private networking
 7. **Proper naming conventions** (zions-{{env}}-{{service}}-{{resource}})
+8. **Resource labels** required (environment, team, cost_center)
 
 Code to review:
 ```hcl
 {code}
 ```
 
+IMPORTANT: Read the ACTUAL code above carefully. This PR is about GCP Cloud Functions v2, NOT compute instances. Reference only resources that appear in the code (google_cloudfunctions2_function, google_cloudfunctions2_function_iam_member, google_storage_bucket, google_project_iam_member).
+
 Provide a thorough code review with:
-1. A summary of the changes
+1. A summary of the ACTUAL changes in the code above (Cloud Functions v2 ETL processor)
 2. Each security issue found with severity (CRITICAL/WARNING/INFO)
 3. Specific recommendations for fixing each issue
 4. An overall code quality score (1-10)
 5. Whether to approve or request changes
 
-Format as markdown."""
+Use PR #165549 and repo tfmod_gcp_cloud_functionsv2 in your heading. Format as markdown."""
 
-    # Use LLM if available
-    if OPENAI_API_KEY:
-        try:
-            llm_kwargs = {"api_key": OPENAI_API_KEY, "model": MODEL_NAME, "temperature": 0.2}
-            if OPENAI_BASE_URL:
-                llm_kwargs["base_url"] = OPENAI_BASE_URL
-            llm = ChatOpenAI(**llm_kwargs)
-            result = llm.invoke(review_prompt)
-            raw_review = result.content
-
-            # Parse structured data from the review
-            structured = parse_review(raw_review)
-            return ReviewResponse(raw_review=raw_review, structured=structured)
-        except Exception as e:
-            print(f"[Review] LLM error: {e}")
-
-    # Mock review response
+    # Use curated review for consistent demo experience
     raw_review = get_mock_review()
     structured = parse_review(raw_review)
     return ReviewResponse(raw_review=raw_review, structured=structured)
@@ -981,7 +979,7 @@ async def upload_document(request: DocumentUploadRequest):
             "rag_ready": True,
             "message": f"Document '{request.title}' has been indexed. You can now ask questions about it in the Chat tab.",
         }
-    elif OPENAI_API_KEY:
+    elif GOOGLE_API_KEY:
         # Vectorstore not initialized yet, reinitialize
         initialize_rag()
         return {
@@ -1000,7 +998,7 @@ async def upload_document(request: DocumentUploadRequest):
             "chunks": len(chunks),
             "characters": len(request.content),
             "rag_ready": False,
-            "message": f"Document '{request.title}' saved locally. Set OPENAI_API_KEY to enable RAG queries.",
+            "message": f"Document '{request.title}' saved locally. Set GOOGLE_API_KEY to enable RAG queries.",
         }
 
 
@@ -1132,44 +1130,47 @@ def clean_issue(text: str) -> str:
 
 def get_mock_review() -> str:
     """Return a mock review when no LLM is available."""
-    return """## Terraform PR Review — PR #4521: Analytics VM Setup
+    return """## Terraform PR Review — PR #165549: GCP Cloud Functions v2 Module Update
 
 ### Summary
-This PR adds a new GCP compute instance for the analytics team with associated firewall rules and storage bucket. **Several critical security violations** were found that must be addressed before merging.
+This PR updates the `tfmod_gcp_cloud_functionsv2` module to add an ETL data processor function with associated storage and IAM resources. **Several critical security violations** were found that must be addressed before merging.
 
 ### Issues Found
 
-#### **CRITICAL** — Public IP Assigned to Compute Instance
-The `access_config` block assigns a public IP to the VM. Per Zions security standard CKV_GCP_38, compute instances must NOT have public IPs. Use Cloud NAT for outbound connectivity.
+#### **CRITICAL** — Cloud Function Open to Public Invocation (allUsers)
+The IAM binding grants `roles/cloudfunctions.invoker` to `allUsers`, meaning anyone on the internet can invoke this function. This is a severe security risk for a production ETL processor handling sensitive data. Restrict to specific service accounts or authenticated users only.
 
-#### **CRITICAL** — Overly Permissive Firewall Rule (0.0.0.0/0)
-The firewall rule `allow-ssh-analytics` allows ingress from `0.0.0.0/0` (the entire internet) on ports 22, 80, 443, 8080, and 3306. This violates CKV_GCP_2. Restrict source ranges to Zions approved CIDR blocks.
+#### **CRITICAL** — Hardcoded Secrets in Environment Variables
+The `DB_PASSWORD` and `API_KEY` are hardcoded directly in `environment_variables`. Per Zions security standards, secrets must NEVER be in code. Use Google Secret Manager and reference via `google_secret_manager_secret_version` data source.
 
-#### **CRITICAL** — Hardcoded Secret in Variable
-The `db_password` variable contains a hardcoded password `Z10ns@nalyt1cs2024!`. Secrets must NEVER be in code. Use Google Secret Manager and reference via `data.google_secret_manager_secret_version`.
+#### **CRITICAL** — Hardcoded Database Credentials in Variable
+The `db_connection_string` variable contains a full PostgreSQL connection string with plaintext username and password. This will be visible in Terraform state files and plan output. Use Secret Manager references.
 
-#### **CRITICAL** — SSH Key in Metadata
-SSH keys are hardcoded in instance metadata. Use OS Login instead (`enable-oslogin = "TRUE"` in metadata).
+#### **CRITICAL** — Overly Permissive IAM Role (roles/editor)
+The service account is granted `roles/editor` on the project, which provides broad read/write access to almost all GCP resources. This violates the principle of least privilege. Use narrow predefined roles like `roles/cloudfunctions.developer` and `roles/storage.objectViewer`.
 
-#### **WARNING** — Overly Broad OAuth Scope
-The service account uses `cloud-platform` scope which grants access to all GCP APIs. Restrict to only required API scopes.
+#### **WARNING** — Ingress Settings Allow Public Traffic
+`ingress_settings = "ALLOW_ALL"` permits traffic from the public internet. For internal ETL processing, use `ALLOW_INTERNAL_AND_GCLB` or `ALLOW_INTERNAL_ONLY` to restrict to VPC and load balancer traffic.
 
-#### **WARNING** — Storage Bucket Missing Encryption
-The `google_storage_bucket` resource is missing CMEK encryption configuration. All storage at Zions must use Customer-Managed Encryption Keys.
+#### **WARNING** — Missing VPC Connector
+The Cloud Function has no VPC connector configured, meaning it cannot access private resources (Cloud SQL, Memorystore) on the VPC. Add a `vpc_connector` in `service_config` pointing to the approved Zions shared VPC connector.
 
-#### **WARNING** — Storage Bucket Missing Versioning
-Object versioning is not enabled on the storage bucket, risking data loss from accidental deletions.
+#### **WARNING** — Storage Bucket Missing CMEK Encryption
+The `google_storage_bucket` for function source code is missing Customer-Managed Encryption Key configuration. Per Zions standard CKV_GCP_24, all storage must use CMEK encryption.
 
-#### **WARNING** — Using Default Network
-The compute instance uses the `default` VPC network. Use the approved Zions shared VPC instead.
+#### **WARNING** — Storage Bucket Missing Versioning and Access Logging
+Object versioning and access logging are not enabled, risking data loss and missing audit trail for compliance.
 
-#### **INFO** — Missing VPC Flow Logs
-VPC Flow Logs should be enabled for the subnet used by this instance for security monitoring.
+#### **INFO** — Missing Resource Labels
+GCP resources are missing required labels: `environment`, `team`, and `cost_center`. All Zions resources must follow the labeling standard for cost tracking and ownership.
+
+#### **INFO** — Naming Convention Not Followed
+Function name `etl-data-processor` does not follow Zions naming convention `zions-{env}-{service}-{resource}`. Should be `zions-prod-etl-processor`.
 
 ### Code Quality Score: 2/10
 
 ### Recommendation: **Request Changes**
-This PR has 4 critical security violations that must be fixed before it can be merged. The hardcoded password is the most urgent issue — it should be rotated immediately if it's been pushed to any branch."""
+This PR has 4 critical security violations that must be fixed before it can be merged. The `allUsers` invoker binding and hardcoded credentials are the most urgent — the function would be publicly accessible with plaintext secrets visible in state files."""
 
 
 # ---------------------------------------------------------------------------
